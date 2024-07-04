@@ -27,9 +27,9 @@ struct Opt {
     )]
     webhook: Option<String>,
 
-    /// Machine id
+    /// Hostname
     #[arg(short, long)]
-    machine_id: String,
+    hostname: String,
 }
 
 async fn send_alert(webhook: &String, message: String) -> Result<(), anyhow::Error> {
@@ -43,6 +43,22 @@ async fn send_alert(webhook: &String, message: String) -> Result<(), anyhow::Err
     let client = reqwest::Client::new();
     client.post(webhook).json(&body).send().await?;
     Ok(())
+}
+
+#[cfg(not(feature = "alert-cn"))]
+fn get_alert_message(fn_name: &String, machine: &String, event: &Event) -> String {
+    format!(
+        "[ALERT] {} takes too loooooooong! hostname: {}, pid: {}, elapsed: {}ns",
+        fn_name, machine, event.pid, event.elapsed_ns
+    )
+}
+
+#[cfg(feature = "alert-cn")]
+fn get_alert_message(fn_name: &String, machine: &String, event: &Event) -> String {
+    format!(
+        "[警告] {} 上的 {} 实在是太慢了！居然消耗了 {} 纳秒！快去看看服务 {} 吧！",
+        machine, fn_name, event.elapsed_ns, event.pid
+    )
 }
 
 #[tokio::main]
@@ -95,7 +111,7 @@ async fn main() -> Result<(), anyhow::Error> {
         let mut buf = events.open(cpu_id, None)?;
         let fn_name = opt.fn_name.clone();
         let webhook = opt.webhook.clone();
-        let cluster = opt.machine_id.clone();
+        let hostname = opt.hostname.clone();
 
         task::spawn(async move {
             let mut buffers = (0..10)
@@ -111,10 +127,7 @@ async fn main() -> Result<(), anyhow::Error> {
                         "new alert, pid: {}, elapsed_ns: {}",
                         event.pid, event.elapsed_ns
                     );
-                    let message = format!(
-                        "[ALERT] {} takes too loooooooong! cluster: {}, pid: {}, elapsed: {}ns",
-                        fn_name, cluster, event.pid, event.elapsed_ns
-                    );
+                    let message = get_alert_message(&fn_name, &hostname, &event);
                     if let Some(wh) = &webhook {
                         if let Err(e) = send_alert(&wh, message).await {
                             error!("Alert send failed, ex: {}", e);

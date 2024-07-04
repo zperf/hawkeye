@@ -22,3 +22,7 @@ serde_json = "1.0.120"
 [[bin]]
 name = "hawkeye"
 path = "src/main.rs"
+
+[features]
+default = ["alert-cn"]
+alert-cn = []
