@@ -54,10 +54,10 @@ fn get_alert_message(fn_name: &String, machine: &String, event: &Event) -> Strin
 }
 
 #[cfg(feature = "alert-cn")]
-fn get_alert_message(fn_name: &String, machine: &String, event: &Event) -> String {
+fn get_alert_message(fn_name: &String, hostname: &String, event: &Event) -> String {
     format!(
         "[警告] {} 上的 {} 实在是太慢了！居然消耗了 {} 纳秒！快去看看服务 {} 吧！",
-        machine, fn_name, event.elapsed_ns, event.pid
+        hostname, fn_name, event.elapsed_ns, event.pid
     )
 }
 
