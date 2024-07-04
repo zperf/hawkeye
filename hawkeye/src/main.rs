@@ -2,18 +2,19 @@ use aya::programs::UProbe;
 use aya::{include_bytes_aligned, Bpf};
 use aya_log::BpfLogger;
 use clap::Parser;
-use log::{info, warn, debug};
+use log::{debug, info, warn};
 use tokio::signal;
 
 #[derive(Debug, Parser)]
 struct Opt {
-    #[clap(short, long)]
+    #[arg(short, long)]
     pid: Option<i32>,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     let opt = Opt::parse();
+    dbg!(&opt);
 
     env_logger::init();
 
@@ -44,9 +45,18 @@ async fn main() -> Result<(), anyhow::Error> {
         // This can happen if you remove all log statements from your eBPF program.
         warn!("failed to initialize eBPF logger: {}", e);
     }
-    let program: &mut UProbe = bpf.program_mut("hawkeye").unwrap().try_into()?;
-    program.load()?;
-    program.attach(Some("clock_gettime"), 0, "libc", opt.pid)?;
+
+    {
+        let program: &mut UProbe = bpf.program_mut("on_libc_fn_enter").unwrap().try_into()?;
+        program.load()?;
+        program.attach(Some("clock_gettime"), 0, "libc", opt.pid)?;
+    }
+
+    {
+        let program: &mut UProbe = bpf.program_mut("on_libc_fn_exit").unwrap().try_into()?;
+        program.load()?;
+        program.attach(Some("clock_gettime"), 0, "libc", opt.pid)?;
+    }
 
     info!("Waiting for Ctrl-C...");
     signal::ctrl_c().await?;
