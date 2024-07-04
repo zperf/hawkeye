@@ -60,7 +60,6 @@ fn exit_fn(ctx: ProbeContext) -> Result<u32, i64> {
 
             // trigger alert
             if elapsed > Duration::from_secs(1).as_nanos() as u64 {
-                info!(&ctx, "alert!");
                 let event = Event {
                     pid,
                     elapsed_ns: elapsed,
