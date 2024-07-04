@@ -10,7 +10,6 @@ use aya_ebpf::{
     programs::ProbeContext,
     EbpfContext,
 };
-use aya_log_ebpf::info;
 use hawkeye_common::Event;
 
 #[panic_handler]

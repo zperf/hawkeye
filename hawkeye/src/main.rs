@@ -1,3 +1,5 @@
+use std::ffi::OsStr;
+
 use anyhow::anyhow;
 use aya::maps::AsyncPerfEventArray;
 use aya::programs::UProbe;
@@ -28,7 +30,7 @@ struct Opt {
     webhook: Option<String>,
 
     /// Hostname
-    #[arg(short, long)]
+    #[arg(long)]
     hostname: String,
 }
 
@@ -129,8 +131,10 @@ async fn main() -> Result<(), anyhow::Error> {
                     );
                     let message = get_alert_message(&fn_name, &hostname, &event);
                     if let Some(wh) = &webhook {
-                        if let Err(e) = send_alert(&wh, message).await {
-                            error!("Alert send failed, ex: {}", e);
+                        if !wh.trim().is_empty() {
+                            if let Err(e) = send_alert(&wh, message).await {
+                                error!("Alert send failed, ex: {}", e);
+                            }
                         }
                     }
                 }
