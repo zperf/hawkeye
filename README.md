@@ -9,13 +9,13 @@ where a single self-contained binary can be deployed on many linux distributions
 ## How to use
 
 ```bash
-Usage: hawkeye [OPTIONS] --cluster-id <CLUSTER_ID>
+Usage: hawkeye [OPTIONS] --machine-id <MACHINE_ID>
 
 Options:
   -p, --pid <PID>                Process to be traced
   -f, --fn-name <FN_NAME>        Function name [default: fdatasync]
   -w, --webhook <WEBHOOK>        WxWork bot webhook [default: ""]
-  -c, --cluster-id <CLUSTER_ID>  Machine Id
+  -c, --machine-id <MACHINE_ID>  Machine id
   -h, --help                     Print help
 ```
 

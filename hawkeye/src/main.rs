@@ -27,9 +27,9 @@ struct Opt {
     )]
     webhook: String,
 
-    /// Machine Id
+    /// Machine id
     #[arg(short, long)]
-    cluster_id: String,
+    machine_id: String,
 }
 
 async fn send_alert(webhook: &String, message: String) -> Result<(), anyhow::Error> {
@@ -95,7 +95,7 @@ async fn main() -> Result<(), anyhow::Error> {
         let mut buf = events.open(cpu_id, None)?;
         let fn_name = opt.fn_name.clone();
         let webhook = opt.webhook.clone();
-        let cluster = opt.cluster_id.clone();
+        let cluster = opt.machine_id.clone();
 
         task::spawn(async move {
             let mut buffers = (0..10)
