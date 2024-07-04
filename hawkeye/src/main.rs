@@ -11,12 +11,15 @@ use tokio::{signal, task};
 
 #[derive(Debug, Parser)]
 struct Opt {
+    /// Process to be traced
     #[arg(short, long)]
     pid: Option<i32>,
 
-    #[arg(short, long, default_value = "clock_gettime")]
+    /// Function name
+    #[arg(short, long, default_value = "fdatasync")]
     fn_name: String,
 
+    /// WxWork bot webhook
     #[arg(
         short,
         long,
@@ -24,6 +27,7 @@ struct Opt {
     )]
     webhook: String,
 
+    /// Machine Id
     #[arg(short, long)]
     cluster_id: String,
 }

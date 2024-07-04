@@ -1,32 +1,51 @@
 # hawkeye
 
-## Prerequisites
+Hawkeye is a libc call tracing tool, like [funclatency][1] but with eBPF CO-RE based on [aya][2],
+where a single self-contained binary can be deployed on many linux distributions and kernel versions.
 
-1. Install bpf-linker: `cargo install bpf-linker`
+[1]: https://github.com/iovisor/bcc/blob/master/tools/funclatency.py
+[2]: https://github.com/aya-rs/aya
 
-## Build eBPF
+## How to use
 
 ```bash
-cargo xtask build-ebpf
+Usage: hawkeye [OPTIONS] --cluster-id <CLUSTER_ID>
+
+Options:
+  -p, --pid <PID>                Process to be traced
+  -f, --fn-name <FN_NAME>        Function name [default: fdatasync]
+  -w, --webhook <WEBHOOK>        WxWork bot webhook [default: ""]
+  -c, --cluster-id <CLUSTER_ID>  Machine Id
+  -h, --help                     Print help
 ```
 
-To perform a release build you can use the `--release` flag.
-You may also change the target architecture with the `--target` flag.
+## How to build
 
-## Build Userspace
+Install bpf-linker
 
 ```bash
-cargo build
+cargo install bpf-linker
 ```
 
-## Build eBPF and Userspace
+Add musl target
 
 ```bash
+rustup target add x86_64-unknown-linux-musl
+```
+
+Build
+
+```bash
+# dev build
 cargo xtask build
-```
 
-## Run
+# release build
+cargo xtask build --release
 
-```bash
-RUST_LOG=info cargo xtask run
+# build eBPF only
+cargo xtask build-ebpf
+
+# run
+export RUST_LOG=info
+cargo xtask run
 ```
