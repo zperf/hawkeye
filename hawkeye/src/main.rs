@@ -25,7 +25,7 @@ struct Opt {
         long,
         default_value = include_str!("../../.webhook")
     )]
-    webhook: String,
+    webhook: Option<String>,
 
     /// Machine id
     #[arg(short, long)]
@@ -115,8 +115,10 @@ async fn main() -> Result<(), anyhow::Error> {
                         "[ALERT] {} takes too loooooooong! cluster: {}, pid: {}, elapsed: {}ns",
                         fn_name, cluster, event.pid, event.elapsed_ns
                     );
-                    if let Err(e) = send_alert(&webhook, message).await {
-                        error!("Alert send failed, ex: {}", e);
+                    if let Some(wh) = &webhook {
+                        if let Err(e) = send_alert(&wh, message).await {
+                            error!("Alert send failed, ex: {}", e);
+                        }
                     }
                 }
             }
