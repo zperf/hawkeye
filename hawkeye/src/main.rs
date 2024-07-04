@@ -9,6 +9,9 @@ use tokio::signal;
 struct Opt {
     #[arg(short, long)]
     pid: Option<i32>,
+
+    #[arg(short, long, default_value = "clock_gettime")]
+    fn_name: String,
 }
 
 #[tokio::main]
@@ -49,13 +52,13 @@ async fn main() -> Result<(), anyhow::Error> {
     {
         let program: &mut UProbe = bpf.program_mut("on_libc_fn_enter").unwrap().try_into()?;
         program.load()?;
-        program.attach(Some("clock_gettime"), 0, "libc", opt.pid)?;
+        program.attach(Some(&opt.fn_name), 0, "libc", opt.pid)?;
     }
 
     {
         let program: &mut UProbe = bpf.program_mut("on_libc_fn_exit").unwrap().try_into()?;
         program.load()?;
-        program.attach(Some("clock_gettime"), 0, "libc", opt.pid)?;
+        program.attach(Some(&opt.fn_name), 0, "libc", opt.pid)?;
     }
 
     info!("Waiting for Ctrl-C...");
