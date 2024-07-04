@@ -51,14 +51,15 @@ pub fn on_libc_fn_exit(ctx: ProbeContext) -> u32 {
 
 fn exit_fn(ctx: ProbeContext) -> Result<u32, i64> {
     let pid = ctx.pid();
+
     unsafe {
         if let Some(start) = CALL_START.get(&pid) {
             let elapsed = bpf_ktime_get_ns() - start;
             CALL_START.remove(&pid)?;
-            info!(&ctx, "pid: {}, call elapsed {}ns", pid, elapsed);
+            // info!(&ctx, "pid: {}, call elapsed {}ns", pid, elapsed);
 
             // trigger alert
-            if elapsed > Duration::from_nanos(100).as_nanos() as u64 {
+            if elapsed > Duration::from_secs(1).as_nanos() as u64 {
                 info!(&ctx, "alert!");
                 let event = Event {
                     pid,
@@ -68,5 +69,6 @@ fn exit_fn(ctx: ProbeContext) -> Result<u32, i64> {
             }
         }
     };
+
     Ok(0)
 }
