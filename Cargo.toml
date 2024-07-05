@@ -1,3 +1,3 @@
 [workspace]
 resolver = "2"
-members = ["xtask", "hawkeye", "hawkeye-common", "hawkeye-mock"]
+members = ["hawkeye", "hawkeye-common", "hawkeye-mock", "xtask"]
