@@ -24,14 +24,14 @@ static mut CALL_START: HashMap<u32, u64> = HashMap::<u32, u64>::with_max_entries
 static mut EVENTS: PerfEventArray<Event> = PerfEventArray::with_max_entries(1024, 0);
 
 #[uprobe]
-pub fn on_libc_fn_enter(ctx: ProbeContext) -> u32 {
-    match enter_fn(ctx) {
+pub fn userspace_fn_enter(ctx: ProbeContext) -> u32 {
+    match userspace_enter_fn_impl(ctx) {
         Ok(ret) => ret,
         Err(ret) => ret as u32,
     }
 }
 
-fn enter_fn(ctx: ProbeContext) -> Result<u32, i64> {
+fn userspace_enter_fn_impl(ctx: ProbeContext) -> Result<u32, i64> {
     let pid = ctx.pid();
     unsafe {
         let start_time = bpf_ktime_get_ns();
@@ -41,14 +41,14 @@ fn enter_fn(ctx: ProbeContext) -> Result<u32, i64> {
 }
 
 #[uretprobe]
-pub fn on_libc_fn_exit(ctx: ProbeContext) -> u32 {
-    match exit_fn(ctx) {
+pub fn userspace_fn_exit(ctx: ProbeContext) -> u32 {
+    match userspace_exit_fn_impl(ctx) {
         Ok(ret) => ret,
         Err(ret) => ret as u32,
     }
 }
 
-fn exit_fn(ctx: ProbeContext) -> Result<u32, i64> {
+fn userspace_exit_fn_impl(ctx: ProbeContext) -> Result<u32, i64> {
     let pid = ctx.pid();
 
     unsafe {
