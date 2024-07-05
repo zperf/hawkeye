@@ -7,6 +7,7 @@ edition = "2021"
 aya-ebpf = "0.1.0"
 aya-log-ebpf = "0.1.0"
 hawkeye-common = { path = "../hawkeye-common" }
+paste = "1.0.15"
 
 [[bin]]
 name = "hawkeye"

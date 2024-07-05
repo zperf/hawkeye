@@ -16,8 +16,12 @@ struct Opt {
     pid: Option<i32>,
 
     /// Function name
-    #[arg(short, long, default_value = "fdatasync")]
-    fn_name: String,
+    #[arg(short, long)]
+    fns: Vec<String>,
+
+    /// Attach target
+    #[arg(short, long)]
+    attach_target: String,
 
     /// WxWork bot webhook
     #[arg(
@@ -94,13 +98,16 @@ async fn main() -> Result<(), anyhow::Error> {
         warn!("failed to initialize eBPF logger: {}", e);
     }
 
-    let program: &mut UProbe = bpf.program_mut("on_libc_fn_enter").unwrap().try_into()?;
-    program.load()?;
-    program.attach(Some(&opt.fn_name), 0, "libc", opt.pid)?;
+    for fn_name in opt.fns.iter() {
+        for prefix in vec!["userspace_fn_enter_", "userspace_fn_exit_"] {
+            let mut name = String::from(prefix);
+            name.push_str(&fn_name.as_str());
 
-    let program: &mut UProbe = bpf.program_mut("on_libc_fn_exit").unwrap().try_into()?;
-    program.load()?;
-    program.attach(Some(&opt.fn_name), 0, "libc", opt.pid)?;
+            let program: &mut UProbe = bpf.program_mut(&name).unwrap().try_into()?;
+            program.load()?;
+            program.attach(Some(fn_name), 0, &opt.attach_target, opt.pid)?;
+        }
+    }
 
     let event_map = bpf
         .take_map("EVENTS")
@@ -108,36 +115,38 @@ async fn main() -> Result<(), anyhow::Error> {
     let mut events = AsyncPerfEventArray::try_from(event_map)?;
 
     for cpu_id in aya::util::online_cpus()? {
-        let mut buf = events.open(cpu_id, None)?;
-        let fn_name = opt.fn_name.clone();
-        let webhook = opt.webhook.clone();
-        let hostname = opt.hostname.clone();
+        for fn_name in opt.fns.iter() {
+            let mut buf = events.open(cpu_id, None)?;
+            let webhook = opt.webhook.clone();
+            let hostname = opt.hostname.clone();
+            let name = fn_name.clone();
 
-        task::spawn(async move {
-            let mut buffers = (0..10)
-                .map(|_| bytes::BytesMut::with_capacity(1024))
-                .collect::<Vec<_>>();
-            loop {
-                let events = buf.read_events(&mut buffers).await.unwrap();
-                for i in 0..events.read {
-                    let buf = &mut buffers[i];
-                    let ptr = buf.as_ptr() as *const Event;
-                    let event = unsafe { ptr.read_unaligned() };
-                    info!(
-                        "new alert, pid: {}, elapsed_ns: {}",
-                        event.pid, event.elapsed_ns
-                    );
-                    let message = get_alert_message(&fn_name, &hostname, &event);
-                    if let Some(wh) = &webhook {
-                        if !wh.trim().is_empty() {
-                            if let Err(e) = send_alert(&wh, message).await {
-                                error!("Alert send failed, ex: {}", e);
+            task::spawn(async move {
+                let mut buffers = (0..10)
+                    .map(|_| bytes::BytesMut::with_capacity(1024))
+                    .collect::<Vec<_>>();
+                loop {
+                    let events = buf.read_events(&mut buffers).await.unwrap();
+                    for i in 0..events.read {
+                        let buf = &mut buffers[i];
+                        let ptr = buf.as_ptr() as *const Event;
+                        let event = unsafe { ptr.read_unaligned() };
+                        info!(
+                            "new alert, pid: {}, elapsed_ns: {}",
+                            event.pid, event.elapsed_ns
+                        );
+                        let message = get_alert_message(&name, &hostname, &event);
+                        if let Some(wh) = &webhook {
+                            if !wh.trim().is_empty() {
+                                if let Err(e) = send_alert(&wh, message).await {
+                                    error!("Alert send failed, ex: {}", e);
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
+        }
     }
 
     info!("Waiting for Ctrl-C...");
