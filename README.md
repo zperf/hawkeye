@@ -1,6 +1,6 @@
 # hawkeye
 
-Hawkeye is a libc call tracing tool, like [funclatency][1] but with eBPF CO-RE based on [aya][2],
+Hawkeye is a tracing tool, like [funclatency][1] but with eBPF CO-RE based on [aya][2],
 where a single self-contained binary can be deployed on many Linux distributions and kernel versions.
 
 [1]: https://github.com/iovisor/bcc/blob/master/tools/funclatency.py
