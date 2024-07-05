@@ -1,5 +1,3 @@
-use std::ffi::OsStr;
-
 use anyhow::anyhow;
 use aya::maps::AsyncPerfEventArray;
 use aya::programs::UProbe;
