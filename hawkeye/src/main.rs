@@ -1,3 +1,6 @@
+mod alert;
+mod cli;
+
 use anyhow::anyhow;
 use aya::maps::AsyncPerfEventArray;
 use aya::programs::UProbe;
@@ -6,68 +9,11 @@ use aya_log::BpfLogger;
 use clap::Parser;
 use hawkeye_common::Event;
 use log::{debug, error, info, warn};
-use serde_json::json;
 use tokio::{signal, task};
-
-#[derive(Debug, Parser)]
-struct Opt {
-    /// Process to be traced
-    #[arg(short, long)]
-    pid: Option<i32>,
-
-    /// Function name
-    #[arg(short, long)]
-    fns: Vec<String>,
-
-    /// Attach target
-    #[arg(short, long)]
-    attach_target: String,
-
-    /// WxWork bot webhook
-    #[arg(
-        short,
-        long,
-        default_value = include_str!("../../.webhook")
-    )]
-    webhook: Option<String>,
-
-    /// Hostname
-    #[arg(long)]
-    hostname: String,
-}
-
-async fn send_alert(webhook: &String, message: String) -> Result<(), anyhow::Error> {
-    let body = json!({
-        "msgtype": "text",
-        "text": {
-            "content": message
-        }
-    });
-
-    let client = reqwest::Client::new();
-    client.post(webhook).json(&body).send().await?;
-    Ok(())
-}
-
-#[cfg(not(feature = "alert-cn"))]
-fn get_alert_message(fn_name: &String, machine: &String, event: &Event) -> String {
-    format!(
-        "[ALERT] {} takes too loooooooong! hostname: {}, pid: {}, elapsed: {}ns",
-        fn_name, machine, event.pid, event.elapsed_ns
-    )
-}
-
-#[cfg(feature = "alert-cn")]
-fn get_alert_message(fn_name: &String, hostname: &String, event: &Event) -> String {
-    format!(
-        "[警告] {} 上的 {} 实在是太慢了！居然消耗了 {} 纳秒！快去看看服务 {} 吧！",
-        hostname, fn_name, event.elapsed_ns, event.pid
-    )
-}
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    let opt = Opt::parse();
+    let opt = cli::Opt::parse();
     env_logger::init();
 
     // Bump the memlock rlimit. This is needed for older kernels that don't use the
@@ -135,10 +81,10 @@ async fn main() -> Result<(), anyhow::Error> {
                             "new alert, pid: {}, elapsed_ns: {}",
                             event.pid, event.elapsed_ns
                         );
-                        let message = get_alert_message(&name, &hostname, &event);
+                        let message = alert::get_message(&name, &hostname, &event);
                         if let Some(wh) = &webhook {
                             if !wh.trim().is_empty() {
-                                if let Err(e) = send_alert(&wh, message).await {
+                                if let Err(e) = alert::send(&wh, message).await {
                                     error!("Alert send failed, ex: {}", e);
                                 }
                             }
