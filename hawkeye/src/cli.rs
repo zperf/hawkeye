@@ -6,9 +6,13 @@ pub(crate) struct Opt {
     #[arg(short, long)]
     pub(crate) pid: Option<i32>,
 
-    /// Function name
+    /// User space function names
     #[arg(short, long)]
-    pub(crate) fns: Vec<String>,
+    pub(crate) ufns: Option<Vec<String>>,
+
+    /// Kernel space function names
+    #[arg(short, long)]
+    pub(crate) kfns: Option<Vec<String>>,
 
     /// Attach target
     #[arg(short, long)]

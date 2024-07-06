@@ -1,6 +1,8 @@
 mod alert;
 mod cli;
 
+use std::vec;
+
 use anyhow::anyhow;
 use aya::maps::AsyncPerfEventArray;
 use aya::programs::UProbe;
@@ -44,14 +46,30 @@ async fn main() -> Result<(), anyhow::Error> {
         warn!("failed to initialize eBPF logger: {}", e);
     }
 
-    for fn_name in opt.fns.iter() {
-        for prefix in vec!["userspace_fn_enter_", "userspace_fn_exit_"] {
-            let mut name = String::from(prefix);
-            name.push_str(&fn_name.as_str());
+    if let Some(ufns) = &opt.ufns {
+        for fn_name in ufns.iter() {
+            for prefix in vec!["ufn_enter_", "ufn_exit_"] {
+                let mut name = String::from(prefix);
+                name.push_str(&fn_name.as_str());
 
-            let program: &mut UProbe = bpf.program_mut(&name).unwrap().try_into()?;
-            program.load()?;
-            program.attach(Some(fn_name), 0, &opt.attach_target, opt.pid)?;
+                let program: &mut UProbe = bpf.program_mut(&name).unwrap().try_into()?;
+                program.load()?;
+                // TODO: check attach target
+                program.attach(Some(fn_name), 0, &opt.attach_target, opt.pid)?;
+            }
+        }
+    }
+
+    if let Some(kfns) = &opt.kfns {
+        for fn_name in kfns.iter() {
+            for prefix in vec!["kfn_enter_", "kfn_exit_"] {
+                let mut name = String::from(prefix);
+                name.push_str(&fn_name.as_str());
+
+                let program: &mut UProbe = bpf.program_mut(&name).unwrap().try_into()?;
+                program.load()?;
+                program.attach(Some(fn_name), 0, &opt.attach_target, opt.pid)?;
+            }
         }
     }
 
@@ -61,7 +79,13 @@ async fn main() -> Result<(), anyhow::Error> {
     let mut events = AsyncPerfEventArray::try_from(event_map)?;
 
     for cpu_id in aya::util::online_cpus()? {
-        for fn_name in opt.fns.iter() {
+        for fn_name in opt
+            .ufns
+            .clone()
+            .unwrap_or(vec![])
+            .iter()
+            .chain(opt.kfns.clone().unwrap_or(vec![]).iter())
+        {
             let mut buf = events.open(cpu_id, None)?;
             let webhook = opt.webhook.clone();
             let hostname = opt.hostname.clone();
