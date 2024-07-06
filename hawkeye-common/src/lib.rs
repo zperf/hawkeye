@@ -11,9 +11,12 @@ pub struct Event {
 
 #[derive(Copy, Clone)]
 pub enum EventType {
-    clock_gettime,
-    fsync,
-    fdatasync,
+    clock_gettime,       // tracepoint:syscalls:sys_enter_clock_gettime
+    fsync,               // tracepoint:syscalls:sys_enter_fsync
+    fdatasync,           // tracepoint:syscalls:sys_enter_fdatasync
+    down_killable,       // kprobe:down_killable
+    down_read_killable,  // kprobe:down_read_killable
+    down_write_killable, // kprobe:down_write_killable
 }
 
 impl Into<u32> for EventType {
@@ -22,6 +25,9 @@ impl Into<u32> for EventType {
             EventType::clock_gettime => 0,
             EventType::fsync => 1,
             EventType::fdatasync => 2,
+            EventType::down_killable => 3,
+            EventType::down_read_killable => 4,
+            EventType::down_write_killable => 5,
         }
     }
 }
