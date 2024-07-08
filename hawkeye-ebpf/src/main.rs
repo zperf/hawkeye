@@ -42,6 +42,7 @@ macro_rules! ufn_impl {
 ufn_impl!(clock_gettime, DEFAULT_DEADLINE);
 ufn_impl!(fsync, DEFAULT_DEADLINE);
 ufn_impl!(fdatasync, DEFAULT_DEADLINE);
+ufn_impl!(posix_fadvise, DEFAULT_DEADLINE);
 
 macro_rules! kfn_impl {
     ($name:ident, $deadline:expr) => {
