@@ -27,6 +27,6 @@ pub(crate) struct Opt {
     pub(crate) webhook: Option<String>,
 
     /// Hostname
-    #[arg(long)]
+    #[arg(long, default_value_t = hostname::get().unwrap().into_string().unwrap())]
     pub(crate) hostname: String,
 }
