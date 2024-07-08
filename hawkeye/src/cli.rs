@@ -1,6 +1,7 @@
 use clap::Parser;
 
 #[derive(Debug, Parser)]
+#[command(arg_required_else_help(true))]
 pub(crate) struct Opt {
     /// Process to be traced
     #[arg(short, long)]

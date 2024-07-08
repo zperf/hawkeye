@@ -10,6 +10,7 @@ use std::thread;
 use std::time::Duration;
 
 #[derive(Parser, Debug)]
+#[command(arg_required_else_help(true))]
 struct Args {
     #[arg(short, long)]
     mock_type: Vec<MockType>,
