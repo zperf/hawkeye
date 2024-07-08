@@ -11,7 +11,6 @@ use aya_ebpf::{
     EbpfContext,
 };
 use aya_log_ebpf::info;
-use core::ptr::addr_of_mut;
 use core::time::Duration;
 use hawkeye_common::{Event, EventType, ToStr};
 
