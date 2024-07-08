@@ -12,9 +12,9 @@ use std::time::Duration;
 #[derive(Parser, Debug)]
 struct Args {
     #[arg(short, long)]
-    mock_type: MockType,
+    mock_type: Vec<MockType>,
 
-    #[arg(short, long, value_parser = parse_duration)]
+    #[arg(short, long, value_parser = parse_duration, default_value = "1")]
     interval: Duration,
 }
 
@@ -87,14 +87,22 @@ async fn main() -> Result<(), anyhow::Error> {
     env_logger::init();
     let args = Args::parse();
 
-    let mut ticker: Box<dyn Ticker> = match args.mock_type {
-        MockType::ClockGetTime => Box::new(ClockTiker::new()),
-        MockType::FDataSync => Box::new(FlushTicker::new(true)?),
-        MockType::FSync => Box::new(FlushTicker::new(false)?),
-    };
-
-    loop {
-        ticker.tick()?;
-        thread::sleep(args.interval);
+    let mut tickers = Vec::new();
+    for mock_type in args.mock_type.iter() {
+        let ticker: Box<dyn Ticker> = match mock_type {
+            MockType::ClockGetTime => Box::new(ClockTiker::new()),
+            MockType::FDataSync => Box::new(FlushTicker::new(true)?),
+            MockType::FSync => Box::new(FlushTicker::new(false)?),
+        };
+        tickers.push(ticker);
     }
+
+    while !tickers.is_empty() {
+        for ticker in tickers.iter_mut() {
+            ticker.tick()?;
+            thread::sleep(args.interval);
+        }
+    }
+
+    Ok(())
 }

@@ -56,6 +56,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 program.load()?;
                 // TODO: check attach target
                 program.attach(Some(fn_name), 0, &opt.attach_target, opt.pid)?;
+                info!("Attached to {} {}, loading program: {}", &opt.attach_target, fn_name, &name);
             }
         }
     }
@@ -69,6 +70,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 let program: &mut UProbe = bpf.program_mut(&name).unwrap().try_into()?;
                 program.load()?;
                 program.attach(Some(fn_name), 0, &opt.attach_target, opt.pid)?;
+                info!("Attached to {} {}, loading program: {}", &opt.attach_target, fn_name, &name);
             }
         }
     }

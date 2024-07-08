@@ -1,6 +1,8 @@
 #![no_std]
 #![allow(nonstandard_style)]
 
+use core::fmt::Display;
+
 #[allow(dead_code)]
 #[derive(Copy, Clone)]
 pub struct Event {
@@ -25,5 +27,29 @@ pub enum EventType {
 impl From<EventType> for u32 {
     fn from(value: EventType) -> Self {
         value as u32
+    }
+}
+
+impl Display for EventType {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(self.to_str())
+    }
+}
+
+pub trait ToStr {
+    fn to_str(&self) -> &'static str;
+}
+
+impl ToStr for EventType {
+    fn to_str(&self) -> &'static str {
+        match self {
+            EventType::clock_gettime => "clock_gettime",
+            EventType::fsync => "fsync",
+            EventType::fdatasync => "fdatasync",
+            EventType::down_killable => "down_killable",
+            EventType::down_read_killable => "down_read_killable",
+            EventType::down_write_killable => "down_write_killable",
+            EventType::posix_fadvise => "posix_fadvise",
+        }
     }
 }
