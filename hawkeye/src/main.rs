@@ -5,7 +5,7 @@ use std::vec;
 
 use anyhow::anyhow;
 use aya::maps::AsyncPerfEventArray;
-use aya::programs::UProbe;
+use aya::programs::{KProbe, UProbe};
 use aya::{include_bytes_aligned, Bpf};
 use aya_log::BpfLogger;
 use clap::Parser;
@@ -47,6 +47,11 @@ async fn main() -> Result<(), anyhow::Error> {
     }
 
     if let Some(ufns) = &opt.ufns {
+        if opt.attach_target.is_none() {
+            return Err(anyhow!("Attach target is not defined"));
+        }
+        let attach_target = opt.attach_target.unwrap();
+
         for fn_name in ufns.iter() {
             for prefix in vec!["ufn_enter_", "ufn_exit_"] {
                 let mut name = String::from(prefix);
@@ -55,8 +60,8 @@ async fn main() -> Result<(), anyhow::Error> {
                 let program: &mut UProbe = bpf.program_mut(&name).unwrap().try_into()?;
                 program.load()?;
                 // TODO: check attach target
-                program.attach(Some(fn_name), 0, &opt.attach_target, opt.pid)?;
-                info!("Attached to {} {}, loading program: {}", &opt.attach_target, fn_name, &name);
+                program.attach(Some(fn_name), 0, &attach_target, opt.pid)?;
+                info!("Attached to {} {}, loading program: {}", &attach_target, fn_name, &name);
             }
         }
     }
@@ -67,10 +72,10 @@ async fn main() -> Result<(), anyhow::Error> {
                 let mut name = String::from(prefix);
                 name.push_str(&fn_name.as_str());
 
-                let program: &mut UProbe = bpf.program_mut(&name).unwrap().try_into()?;
+                let program: &mut KProbe = bpf.program_mut(&name).unwrap().try_into()?;
                 program.load()?;
-                program.attach(Some(fn_name), 0, &opt.attach_target, opt.pid)?;
-                info!("Attached to {} {}, loading program: {}", &opt.attach_target, fn_name, &name);
+                program.attach(fn_name, 0)?;
+                info!("Attached to {}, loading program: {}", fn_name, &name);
             }
         }
     }

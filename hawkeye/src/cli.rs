@@ -15,9 +15,9 @@ pub(crate) struct Opt {
     #[arg(short, long)]
     pub(crate) kfns: Option<Vec<String>>,
 
-    /// Attach target
+    /// Attach target, for uprobe
     #[arg(short, long)]
-    pub(crate) attach_target: String,
+    pub(crate) attach_target: Option<String>,
 
     /// WxWork bot webhook
     #[arg(
