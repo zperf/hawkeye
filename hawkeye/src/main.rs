@@ -1,5 +1,6 @@
 mod alert;
 mod cli;
+mod symbol;
 
 use std::vec;
 
@@ -52,15 +53,37 @@ async fn main() -> Result<(), anyhow::Error> {
         }
         let attach_target = opt.attach_target.unwrap();
 
+        if opt.attach_offset.is_some() && ufns.len() > 1 {
+            return Err(anyhow!(
+                "--attach-offset can only be used with a single function name"
+            ));
+        }
+
         for fn_name in ufns.iter() {
+            // Determine the file offset: use explicit offset if given, otherwise
+            // resolve from the ELF symbol table without relying on BTF.
+            let attach_offset = match opt.attach_offset {
+                Some(off) => {
+                    info!("Using explicit attach offset 0x{:x} for '{}'", off, fn_name);
+                    off
+                }
+                None => {
+                    let off = symbol::find_symbol_offset(&attach_target, fn_name)?;
+                    info!(
+                        "Resolved symbol '{}' to file offset 0x{:x} in '{}'",
+                        fn_name, off, &attach_target
+                    );
+                    off
+                }
+            };
+
             for prefix in vec!["ufn_enter_", "ufn_exit_"] {
                 let mut name = String::from(prefix);
                 name.push_str(&fn_name.as_str());
 
                 let program: &mut UProbe = bpf.program_mut(&name).unwrap().try_into()?;
                 program.load()?;
-                // TODO: check attach target
-                program.attach(Some(fn_name), 0, &attach_target, opt.pid)?;
+                program.attach(None, attach_offset, &attach_target, opt.pid)?;
                 info!("Attached to {} {}, loading program: {}", &attach_target, fn_name, &name);
             }
         }

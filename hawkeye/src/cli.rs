@@ -19,6 +19,10 @@ pub(crate) struct Opt {
     #[arg(short, long)]
     pub(crate) attach_target: Option<String>,
 
+    /// Attach offset in the target binary, for uprobe (bypasses BTF-based symbol resolution)
+    #[arg(long)]
+    pub(crate) attach_offset: Option<u64>,
+
     /// WxWork bot webhook
     #[arg(
         short,
